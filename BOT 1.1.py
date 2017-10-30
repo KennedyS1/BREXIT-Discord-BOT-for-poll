@@ -367,4 +367,4 @@ async def on_message(message):
 
 
 
-client.run('MzY0MDc3NzQxNTUwNzMxMjY0.DLKhhw.7Mj1jqZjtMXqkQo61oXPy_T872I')
+client.run('INSERT_YOUR_TOKEN')
