@@ -69,6 +69,7 @@ async def poll_close(): #posting result and disable the poll_mode
     choices_list = []
     for member in voters_list:
         voters_has_voted[member] = False
+
 async def poll_setup_title():
     global title
     await client.send_message(poll_launcher, "What is the title of the Poll ?")
@@ -169,6 +170,73 @@ async def poll_setup_end_1hour_after_quorum_reached():
             await client.send_message(poll_launcher, "`Error 2`Sorry, I didn't understand, please type \"yes\" or \"no\"")
             tmp_end_poll_1_hour_after_quorum_reached = await client.wait_for_message(author=poll_launcher)
 
+async def countdown_create(message, title):
+    global valid_countdown_date_is_entered
+    if message.server == None:
+        server = message.author
+    else:
+        server = message.server
+    valid_countdown_date_is_entered = False
+    if server not in countdown:
+        countdown[server] = {}
+    elif title in countdown[server]:
+        await client.send_message(message.channel, 'Sorry a countdown already have this name')
+    else:
+        countdown[server][title] = {}
+        valid_countdown_date_is_entered = False
+        while valid_countdown_date_is_entered == False:
+            try:
+                await client.send_message(message.channel,'Please enter the date where the countdown will end in the following format: +countdown dd/mm/yyyy hh:mm')
+                message_with_date = await client.wait_for_message(channel=message.channel, author=message.author)
+                countdown[server][title]['day'] = int(message_with_date.content[11:13])
+                countdown[server][title]['month'] = int(message_with_date.content[14:16])
+                countdown[server][title]['year'] = int(message_with_date.content[17:21])
+                countdown[server][title]['hour'] = int(message_with_date.content[22:24])
+                countdown[server][title]['minute'] = int(message_with_date.content[25:27])
+                countdown[server][title]['date'] = datetime.datetime(countdown[server][title]['year'],countdown[server][title]['month'],countdown[server][title]['day'],countdown[server][title]['hour'],countdown[server][title]['minute'], 0)
+                current_date = datetime.datetime.now()
+                tmp_time_remaining = (countdown[server][title]['date'] - current_date)
+                try:
+                    if tmp_time_remaining.total_seconds() <= 0:
+                        await client.send_message(message.channel, 'The poll is ending in the past, please try to create a new countdown')
+                    else:
+                        nothing = int('string')
+                except:
+                    await client.send_message(message.channel, 'Time remaining: ' + str(tmp_time_remaining)[:str(tmp_time_remaining).index('.')])
+                    valid_countdown_date_is_entered = True
+                    countdown[server][title]['author'] = message.author
+            except:
+                client.send_message(message.channel, 'Sorry, I couldn\' undestand the date, please create a new countdown')
+async def countdown_check(message, title):
+    if message.server == None:
+        server = message.author
+    else:
+        server = message.server
+    if server not in countdown:
+        await client.send_message(message.channel, 'Sorry there isn\'t any countdown with that name')
+    else:
+        if title not in countdown[server]:
+            await client.send_message(message.channel, 'Sorry there isn\'t any countdown with that name')
+        else:
+            tmp_time_remaining = str(countdown[server][title] - datetime.datetime.now())
+            time_remaining = tmp_time_remaining[:tmp_time_remaining.index('.')]
+            await client.send_message(message.channel, 'Time remaining : ' + time_remaining)
+async def countdown_delete(message, title):
+    if message.server == None:
+        server = message.author
+    else:
+        server = message.server
+    if server not in countdown:
+        await client.send_message(message.channel, 'Sorry there isn\'t any countdown with that name')
+    else:
+        if title not in countdown[server]:
+            await client.send_message(message.channel, 'Sorry there isn\'t any countdown with that name')
+        else:
+            if message.author == countdown[server][title]['author']:
+                del countdown[server][title]
+                await client.send_message(message.channel, 'The following post has succesfully been deleted : ' + str(title))
+            else:
+                await client.send_message(message.channel, 'Sorry you didn\'t created this countdown and so you can\'t delete it')
 
 
 
@@ -199,56 +267,18 @@ async def on_ready():
 async def on_message(message):
     global poll_mode_enable, Quorum_warning_sent, poll_launcher, hour_verification,poll_end_on_hour,nb_hour_before_poll_end, nb_choices, title,valid_date_is_entered, poll_end_on_date, date_verification, sleep, poll_embed, tmp_time_when_poll_end,date_when_countdown_end
     if message.author.id != '364077741550731264':
-        if message.content.startswith('+countdown') and any(i in [':', '/'] for i in message.content) == False :
-            if message.server == None:
-                await client.send_message(message.author, 'Sorry but poll cannot be accessed throught pms')
+        if message.content.lower.startswith('+countdown'):
+            if message.content.lower.startswith('+countdown_create'):
+                title = message.content.lower[18:]
+                await countdown_create(message=message, title=title)
+            elif message.content.lower.startswith('+countdown_check'):
+                title = message.content.lower[17:]
+                await countdown_check(message=message, title=title)
+            elif message.content.lower.startswith('+countdown_delete'):
+                title = message.content.lower[18:]
+                await countdown_delete(message=message, title=title)
             else:
-                if message.content.startswith == '+countdown_delete':
-                    await client.send_message(message.channel, 'Enter the title of the countdown you want to delete')
-                    title_to_delete = await client.wait_for_message(channel=message.channel)
-                    del countdown[message.server][title_to_delete.content]
-                    await client.send_message(message.channel, 'Countdown successfully deleted')
-                else:
-                    title = message.content[11:]
-                    valid_countdown_date_is_entered = False
-                    try:
-                        if countdown[message.server][title]['enable'] == False:
-                            int('string') #making an error so it switches in except
-                        elif countdown[message.server][title]['enable'] == True:
-                            current_date = datetime.datetime.now()
-                            tmp_time_remaining = countdown[message.server][title]['date'] - current_date
-                            if tmp_time_remaining <= datetime.timedelta():
-                                countdown[message.server][title]['enable'] = False
-                                await client.send_message(message.channel, 'This poll has already ended')
-                            else:
-                                tmp_time_remaining = str(tmp_time_remaining)
-                                await client.send_message(message.channel, 'Time remaining: ' + tmp_time_remaining[:16])
-                    except:
-                        while valid_countdown_date_is_entered == False:
-                            try:
-                                await client.send_message(message.channel, 'Please enter the date where the countdown will end in the following format: +countdown dd/mm/yyyy hh:mm')
-                                countdown[message.server] = {}
-                                countdown[message.server][title] = {}
-                                message_with_date = await client.wait_for_message(channel=message.channel, author=message.author)
-                                countdown[message.server][title]['day'] = int(message_with_date.content[11:13])
-                                countdown[message.server][title]['month'] = int(message_with_date.content[14:16])
-                                countdown[message.server][title]['year'] = int(message_with_date.content[17:21])
-                                countdown[message.server][title]['hour'] = int(message_with_date.content[22:24])
-                                countdown[message.server][title]['minute'] = int(message_with_date.content[25:27])
-                                countdown[message.server][title]['date'] = datetime.datetime(countdown[message.server][title]['year'], countdown[message.server][title]['month'], countdown[message.server][title]['day'], countdown[message.server][title]['hour'], countdown[message.server][title]['minute'], 0)
-                                current_date = datetime.datetime.now()
-                                tmp_time_remaining = (countdown[message.server][title]['date'] - current_date)
-                                try:
-                                    if tmp_time_remaining.total_seconds() <= 0:
-                                        await client.send_message(message.channel, 'The poll is ending in the past, please try again')
-                                    else:
-                                        nothing = int('string')
-                                except:
-                                    await client.send_message(message.channel, 'Time remaining: ' + str(tmp_time_remaining)[:str(tmp_time_remaining).index('.')])
-                                    valid_countdown_date_is_entered = True
-                                    countdown[message.server][title]['enable'] = True
-                            except:
-                                message = await client.wait_for_message(author=message.author, channel=message.channel)
+                await client.send_message(message.channel, 'Unknown commmand')
         if poll_mode_enable == False:
             if message.content.startswith('+poll'): #what happen if a poll is called
                 if message.author.id in allowed_to_poll or message.author.id == "172423919041511424":#checking if the user is allowed to launch a poll
@@ -397,4 +427,4 @@ async def on_message(message):
 
 
 
-client.run('INSERT_TOKEN_HERE')
+client.run('')
