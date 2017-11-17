@@ -1,4 +1,4 @@
-# SOLID SNAKES POLL AND COUNTDOWN BOT
+# Solid Snakes poll and countdown bot
 
 A Discord bot written in python in order for the Solid Snakes discord to poll.
 
