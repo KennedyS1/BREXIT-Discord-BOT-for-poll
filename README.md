@@ -1,4 +1,7 @@
-# BREXIT-Discord-BOT-for-poll
-A Discord bot written in python in order for club50 to do poll
+# SOLID SNAKES POLL AND COUNTDOWN BOT
 
-Upcomming features are comming, if you have suggestions or feedback, make to tell me as well as if you are facing bugs.
+A Discord bot written in python in order for the Solid Snakes discord to poll.
+
+Stay tuned for upcoming features. if you have suggestions or feedback, or are facing any bugs in genereal, make sure to tell me.
+
+And as always, keep in mind who the best CS-Player of all time is: Liquid.
